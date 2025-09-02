@@ -766,7 +766,9 @@ Start altijd: "Op basis van de transcriptie ga ik een gestructureerd feedback ra
                 document.getElementById('candidateTypeSection').style.display = 'block';
                 
                 autoResizeTextarea(document.getElementById('transcriptionResult'));
-                validateCandidateType();
+                
+                // Enable candidate type button
+                document.getElementById('detectTypeBtn').disabled = false;
                 
                 setTimeout(() => {
                     hideProgress(1);
