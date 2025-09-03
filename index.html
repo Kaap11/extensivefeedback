@@ -906,6 +906,178 @@ Format:
             document.getElementById('feedbackResult').value = '';
             document.getElementById('resultsSection').style.display = 'none';
             
+            if (State.analysisType === 'custom') {
+                document.getElementById('customInstruction').value = '';
+            }
+            
+            goToStep(3);
+            validateFeedbackGeneration();
+        }
+        
+        function restart() {
+            State.audioData = null;
+            State.analysisType = 'recruitment';
+            
+            document.getElementById('audioFile').value = '';
+            document.getElementById('audioPlayer').style.display = 'none';
+            document.getElementById('transcriptionResult').value = '';
+            document.getElementById('customInstruction').value = '';
+            document.getElementById('feedbackResult').value = '';
+            
+            ['transcriptionSection', 'analysisSection', 'resultsSection'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+            
+            [1, 2, 3].forEach(hideProgress);
+            [1, 2, 3].forEach(i => document.getElementById(`status${i}`).style.display = 'none');
+            
+            selectAnalysisType('recruitment');
+            goToStep(1);
+            validateInputs();
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        function exportReport() {
+            const transcription = document.getElementById('transcriptionResult').value;
+            const report = document.getElementById('feedbackResult').value;
+            const timestamp = new Date().toISOString().slice(0, 10);
+            
+            if (!transcription || !report) {
+                showStatus('Geen data om te exporteren', 'error', 3);
+                return;
+            }
+            
+            // Export 1: Transcriptie
+            const transcriptBlob = new Blob([transcription], { type: 'text/plain;charset=utf-8' });
+            const transcriptUrl = URL.createObjectURL(transcriptBlob);
+            
+            const transcriptLink = document.createElement('a');
+            transcriptLink.href = transcriptUrl;
+            transcriptLink.download = `KAAP11_Transcriptie_${timestamp}.txt`;
+            document.body.appendChild(transcriptLink);
+            transcriptLink.click();
+            document.body.removeChild(transcriptLink);
+            URL.revokeObjectURL(transcriptUrl);
+            
+            // Export 2: Feedback Analyse (small delay to avoid browser blocking)
+            setTimeout(() => {
+                const reportBlob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+                const reportUrl = URL.createObjectURL(reportBlob);
+                
+                const reportLink = document.createElement('a');
+                reportLink.href = reportUrl;
+                reportLink.download = `KAAP11_Feedback_Analyse_${timestamp}.txt`;
+                document.body.appendChild(reportLink);
+                reportLink.click();
+                document.body.removeChild(reportLink);
+                URL.revokeObjectURL(reportUrl);
+                
+                showStatus('Beide bestanden geëxporteerd: transcriptie en analyse!', 'success', 3);
+            }, 500);
+        }
+        
+        // Remove candidate type related functions
+        function bindEvents() {
+            // Step 1: Setup
+            document.getElementById('openaiKey').addEventListener('input', validateInputs);
+            document.getElementById('audioFile').addEventListener('change', handleAudioUpload);
+            document.getElementById('transcribeBtn').addEventListener('click', transcribeAudio);
+            
+            // Step 2: Analysis (removed candidate type step)
+            document.getElementById('transcriptionResult').addEventListener('input', validateFeedbackGeneration);
+            document.getElementById('recruitmentType').addEventListener('click', () => selectAnalysisType('recruitment'));
+            document.getElementById('customType').addEventListener('click', () => selectAnalysisType('custom'));
+            document.getElementById('customInstruction').addEventListener('input', validateFeedbackGeneration);
+            document.getElementById('generateFeedbackBtn').addEventListener('click', generateFeedback);
+            
+            // Results
+            document.getElementById('newAnalysisBtn').addEventListener('click', newAnalysis);
+            document.getElementById('restartBtn').addEventListener('click', restart);
+            document.getElementById('exportBtn').addEventListener('click', exportReport);
+            
+            // Auto-resize textareas
+            document.addEventListener('input', e => {
+                if (e.target.tagName === 'TEXTAREA') autoResize(e.target);
+            });
+        }
+        
+        function selectAnalysisType(type) {
+            State.analysisType = type;
+            
+            document.getElementById('recruitmentType').classList.toggle('selected', type === 'recruitment');
+            document.getElementById('customType').classList.toggle('selected', type === 'custom');
+            
+            const customField = document.getElementById('customInstruction');
+            customField.style.display = type === 'custom' ? 'block' : 'none';
+            
+            if (type === 'custom') {
+                const saved = localStorage.getItem('custom_analysis_instruction');
+                if (saved) customField.value = saved;
+            }
+            
+            validateFeedbackGeneration();
+        }
+        
+        // Utility functions
+        function goToStep(step) {
+            State.currentStep = step;
+            updateSteps();
+        }
+        
+        function updateSteps() {
+            const steps = document.querySelectorAll('.step');
+            steps.forEach((step, index) => {
+                const stepNum = index + 1;
+                step.classList.remove('active', 'completed');
+                if (stepNum < State.currentStep) {
+                    step.classList.add('completed');
+                } else if (stepNum === State.currentStep) {
+                    step.classList.add('active');
+                }
+            });
+        }
+        
+        function showStatus(message, type, step) {
+            const status = document.getElementById(`status${step}`);
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    if (status.textContent === message) {
+                        status.style.display = 'none';
+                    }
+                }, 6000);
+            }
+        }
+        
+        function showProgress(step, percentage) {
+            const bar = document.getElementById(`progressBar${step}`);
+            const fill = document.getElementById(`progressFill${step}`);
+            bar.style.display = 'block';
+            fill.style.width = `${percentage}%`;
+        }
+        
+        function hideProgress(step) {
+            document.getElementById(`progressBar${step}`).style.display = 'none';
+            document.getElementById(`progressFill${step}`).style.width = '0%';
+        }
+        
+        function setButton(buttonId, disabled) {
+            document.getElementById(buttonId).disabled = disabled;
+        }
+        
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.max(textarea.scrollHeight, 150) + 'px';
+        }
+    </script>
+</body>
+</html>getElementById('feedbackResult').value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+            
             if (State.analysisType === 'recruitment') {
                 State.candidateType = null;
                 document.getElementById('candidateTypeSelect').value = '';
