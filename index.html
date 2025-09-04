@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KAAP11 Transcriptie & Feedback Tool</title>
+    <title>KAAP11 Recruitment Transcriptie & Feedback Tool</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,6 +22,25 @@
             color: #333;
             text-align: center;
             margin-bottom: 30px;
+        }
+        .whatsapp-info {
+            background: #dcf8c6;
+            border: 2px solid #4caf50;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        .whatsapp-info h3 {
+            margin: 0 0 15px 0;
+            color: #2e7d32;
+        }
+        .whatsapp-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .whatsapp-info li {
+            margin-bottom: 8px;
         }
         .steps {
             display: flex;
@@ -98,6 +117,21 @@
         .secondary-btn:hover:not(:disabled) {
             background: #545b62;
         }
+        .record-btn {
+            background: #dc3545;
+        }
+        .record-btn:hover:not(:disabled) {
+            background: #c82333;
+        }
+        .record-btn.recording {
+            background: #ff4757;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
         .status {
             padding: 12px;
             margin: 15px 0;
@@ -144,6 +178,56 @@
             padding: 20px;
             border: 2px solid #e9ecef;
             border-radius: 8px;
+        }
+        .audio-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .audio-method {
+            border: 2px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .audio-method:hover {
+            border-color: #007cba;
+        }
+        .audio-method.selected {
+            border-color: #007cba;
+            background: #f8f9fa;
+        }
+        .audio-method h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        .audio-method p {
+            margin: 0;
+            color: #666;
+            font-size: 13px;
+        }
+        .recording-controls {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+        .recording-timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: #dc3545;
+            margin: 10px 0;
+        }
+        .recording-status {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
         }
         .analysis-options {
             display: grid;
@@ -197,15 +281,42 @@
         .btn-group button {
             flex: 1;
         }
+        .file-upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+            display: none;
+        }
+        .file-upload-area:hover {
+            border-color: #007cba;
+            background: #f8f9fa;
+        }
+        .file-upload-area.dragover {
+            border-color: #007cba;
+            background: #e3f2fd;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>KAAP11 MVP Transcriptie & Feedback Tool</h1>
+        <h1>KAAP11 Recruitment Transcriptie & Feedback Tool</h1>
+        
+        <div class="whatsapp-info">
+            <h3>📱 WhatsApp Audio Oplossing</h3>
+            <strong>WhatsApp .opus bestanden worden niet ondersteund.</strong> Gebruik een van deze alternatieven:
+            <ul>
+                <li><strong>📱 Dictafoon App:</strong> Neem WhatsApp audio opnieuw op met je telefoon dictafoon (Voice Memos/Voice Recorder) en upload het .m4a/.mp3 bestand</li>
+                <li><strong>🎤 Direct Feedback Inspreken:</strong> Gebruik de opname functie hieronder om je feedback direct in te spreken in plaats van het WhatsApp gesprek af te spelen</li>
+                <li><strong>📄 Online Converter:</strong> Converteer .opus naar .mp3 via <a href="https://www.freeconvert.com/" target="_blank" style="color: #007cba; text-decoration: underline;">FreeConvert.com</a> (aanbevolen) of <a href="https://cloudconvert.com/" target="_blank" style="color: #007cba; text-decoration: underline;">CloudConvert.com</a></li>
+            </ul>
+        </div>
         
         <!-- Progress Steps -->
         <div class="steps">
-            <div class="step active">1. Audio Upload</div>
+            <div class="step active">1. Audio Upload/Opname</div>
             <div class="step">2. Transcriptie</div>
             <div class="step">3. Feedback</div>
         </div>
@@ -222,10 +333,41 @@
             </div>
             
             <div class="input-group">
-                <label>Audio Bestand:</label>
-                <input type="file" id="audioFile" accept="audio/*">
-                <audio id="audioPlayer" controls style="display:none;"></audio>
+                <label>Kies Audio Methode:</label>
+                <div class="audio-options">
+                    <div class="audio-method selected" id="uploadMethod">
+                        <h3>📁 Bestand Uploaden</h3>
+                        <p>Upload audio bestand van telefoon dictafoon</p>
+                    </div>
+                    <div class="audio-method" id="recordMethod">
+                        <h3>🎤 Direct Gesprek Opnemen</h3>
+                        <p>Neem je gesprek direct op via browser microfoon</p>
+                    </div>
+                </div>
             </div>
+
+            <!-- File Upload Area -->
+            <div class="file-upload-area" id="uploadArea">
+                <input type="file" id="audioFile" accept="audio/*" style="display: none;">
+                <div onclick="document.getElementById('audioFile').click();" style="cursor: pointer;">
+                    <div style="font-size: 48px; color: #ddd; margin-bottom: 10px;">📁</div>
+                    <div style="font-size: 16px; color: #666;">Klik hier of sleep een audio bestand</div>
+                    <div style="font-size: 12px; color: #999; margin-top: 5px;">Ondersteund: MP3, WAV, M4A, OGG, WEBM, FLAC</div>
+                </div>
+            </div>
+
+            <!-- Recording Area -->
+            <div class="recording-controls" id="recordingArea">
+                <div class="recording-status" id="recordingStatus">Klaar om op te nemen</div>
+                <div class="recording-timer" id="recordingTimer">00:00</div>
+                <div class="btn-group">
+                    <button id="startRecordBtn" class="record-btn">🎤 Start Opname</button>
+                    <button id="stopRecordBtn" class="secondary-btn" disabled>⏹️ Stop Opname</button>
+                    <button id="clearRecordBtn" class="secondary-btn">🗑️ Wissen</button>
+                </div>
+            </div>
+            
+            <audio id="audioPlayer" controls style="display:none;"></audio>
             
             <button id="transcribeBtn" disabled>Start Transcriptie</button>
             
@@ -288,9 +430,9 @@
             </div>
             
             <div class="btn-group">
-                <button id="newFeedbackBtn" class="secondary-btn">Nieuwe Feedback</button>
-                <button id="restartBtn" class="secondary-btn">Herstart Tool</button>
-                <button id="exportBtn" class="success-btn">Exporteer Beide</button>
+                <button id="newFeedbackBtn" class="secondary-btn">Nieuwe Feedback (behoud audio)</button>
+                <button id="restartBtn" class="secondary-btn">Herstart (wis alles)</button>
+                <button id="exportBtn" class="success-btn">Download Bestanden</button>
             </div>
         </div>
     </div>
@@ -300,6 +442,11 @@
         let audioData = null;
         let currentStep = 1;
         let analysisType = 'recruitment';
+        let audioMethod = 'upload';
+        let mediaRecorder = null;
+        let recordingChunks = [];
+        let recordingTimer = null;
+        let recordingStartTime = 0;
         
         // Updated recruitment instruction with score-based approach
         const recruitmentInstruction = `# Feedback Agent voor Recruiter Intakegesprekken
@@ -357,6 +504,7 @@ Begin met: "Op basis van de transcriptie bepaal ik eerst de kandidaat zoek-activ
         document.addEventListener('DOMContentLoaded', function() {
             loadSavedKeys();
             setupEventListeners();
+            selectAudioMethod('upload');
         });
         
         function loadSavedKeys() {
@@ -371,6 +519,15 @@ Begin met: "Op basis van de transcriptie bepaal ik eerst de kandidaat zoek-activ
             // Input validation
             document.getElementById('openaiKey').addEventListener('input', validateInputs);
             document.getElementById('audioFile').addEventListener('change', handleFileUpload);
+            
+            // Audio method selection
+            document.getElementById('uploadMethod').addEventListener('click', () => selectAudioMethod('upload'));
+            document.getElementById('recordMethod').addEventListener('click', () => selectAudioMethod('record'));
+            
+            // Recording controls
+            document.getElementById('startRecordBtn').addEventListener('click', startRecording);
+            document.getElementById('stopRecordBtn').addEventListener('click', stopRecording);
+            document.getElementById('clearRecordBtn').addEventListener('click', clearRecording);
             
             // Main actions
             document.getElementById('transcribeBtn').addEventListener('click', startTranscription);
@@ -388,6 +545,32 @@ Begin met: "Op basis van de transcriptie bepaal ik eerst de kandidaat zoek-activ
             // Text input validation
             document.getElementById('customInstruction').addEventListener('input', validateFeedbackGeneration);
             document.getElementById('transcriptionResult').addEventListener('input', validateFeedbackGeneration);
+            
+            // Drag and drop for file upload
+            const uploadArea = document.getElementById('uploadArea');
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            uploadArea.addEventListener('drop', handleDrop);
+        }
+        
+        function selectAudioMethod(method) {
+            audioMethod = method;
+            
+            // Update UI
+            document.getElementById('uploadMethod').classList.toggle('selected', method === 'upload');
+            document.getElementById('recordMethod').classList.toggle('selected', method === 'record');
+            
+            // Show/hide appropriate areas
+            document.getElementById('uploadArea').style.display = method === 'upload' ? 'block' : 'none';
+            document.getElementById('recordingArea').style.display = method === 'record' ? 'block' : 'none';
+            
+            // Clear previous audio data when switching methods
+            if (audioData) {
+                audioData = null;
+                document.getElementById('audioPlayer').style.display = 'none';
+                document.getElementById('audioFile').value = '';
+                validateInputs();
+            }
         }
         
         function validateInputs() {
@@ -402,6 +585,33 @@ Begin met: "Op basis van de transcriptie bepaal ik eerst de kandidaat zoek-activ
             const hasInstruction = analysisType === 'recruitment' || document.getElementById('customInstruction').value.trim();
             
             document.getElementById('generateFeedbackBtn').disabled = !transcription || !hasInstruction;
+        }
+        
+        // File upload handlers
+        function handleDragOver(event) {
+            event.preventDefault();
+            document.getElementById('uploadArea').classList.add('dragover');
+        }
+        
+        function handleDragLeave(event) {
+            event.preventDefault();
+            document.getElementById('uploadArea').classList.remove('dragover');
+        }
+        
+        function handleDrop(event) {
+            event.preventDefault();
+            document.getElementById('uploadArea').classList.remove('dragover');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                // Simulate file input change
+                const fileInput = document.getElementById('audioFile');
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+                handleFileUpload({ target: fileInput });
+            }
         }
         
         function handleFileUpload(event) {
@@ -438,6 +648,110 @@ Begin met: "Op basis van de transcriptie bepaal ik eerst de kandidaat zoek-activ
             showStatus(`Audio geladen: ${file.name} (${sizeInMB}MB)`, 'success', 1);
             
             validateInputs();
+        }
+        
+        // Recording functions
+        async function startRecording() {
+            try {
+                // Request microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Initialize MediaRecorder
+                mediaRecorder = new MediaRecorder(stream);
+                recordingChunks = [];
+                
+                mediaRecorder.ondataavailable = function(event) {
+                    if (event.data.size > 0) {
+                        recordingChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = function() {
+                    // Create audio blob
+                    const audioBlob = new Blob(recordingChunks, { type: 'audio/webm' });
+                    
+                    // Create file from blob
+                    const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '');
+                    audioData = new File([audioBlob], `opname_${timestamp}.webm`, { type: 'audio/webm' });
+                    
+                    // Show audio player
+                    const audioPlayer = document.getElementById('audioPlayer');
+                    audioPlayer.src = URL.createObjectURL(audioBlob);
+                    audioPlayer.style.display = 'block';
+                    
+                    const sizeInMB = (audioData.size / 1024 / 1024).toFixed(1);
+                    showStatus(`Opname voltooid! (${sizeInMB}MB)`, 'success', 1);
+                    
+                    // Stop all tracks
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    validateInputs();
+                };
+                
+                // Start recording
+                mediaRecorder.start();
+                recordingStartTime = Date.now();
+                
+                // Update UI
+                document.getElementById('startRecordBtn').disabled = true;
+                document.getElementById('startRecordBtn').classList.add('recording');
+                document.getElementById('stopRecordBtn').disabled = false;
+                document.getElementById('recordingStatus').textContent = '🔴 Opname actief...';
+                
+                // Start timer
+                recordingTimer = setInterval(updateRecordingTimer, 1000);
+                
+                showStatus('Opname gestart! Spreek nu in je microfoon.', 'success', 1);
+                
+            } catch (error) {
+                console.error('Recording error:', error);
+                showStatus('Kan geen toegang krijgen tot microfoon. Controleer je browser instellingen.', 'error', 1);
+            }
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                
+                // Update UI
+                document.getElementById('startRecordBtn').disabled = false;
+                document.getElementById('startRecordBtn').classList.remove('recording');
+                document.getElementById('stopRecordBtn').disabled = true;
+                document.getElementById('recordingStatus').textContent = 'Opname gestopt';
+                
+                // Stop timer
+                if (recordingTimer) {
+                    clearInterval(recordingTimer);
+                    recordingTimer = null;
+                }
+            }
+        }
+        
+        function clearRecording() {
+            // Stop recording if active
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                stopRecording();
+            }
+            
+            // Clear data
+            audioData = null;
+            recordingChunks = [];
+            
+            // Reset UI
+            document.getElementById('audioPlayer').style.display = 'none';
+            document.getElementById('recordingTimer').textContent = '00:00';
+            document.getElementById('recordingStatus').textContent = 'Klaar om op te nemen';
+            
+            validateInputs();
+            showStatus('Opname gewist', 'warning', 1);
+        }
+        
+        function updateRecordingTimer() {
+            const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('recordingTimer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
         
         async function startTranscription() {
@@ -657,13 +971,32 @@ Geef je gedetailleerde analyse en feedback volgens de bovenstaande instructies.`
         }
         
         function restartTool() {
+            // Stop any active recording
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                stopRecording();
+            }
+            
+            // Clear recording timer
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+                recordingTimer = null;
+            }
+            
             // Reset all data
             audioData = null;
+            recordingChunks = [];
             document.getElementById('audioFile').value = '';
             document.getElementById('audioPlayer').style.display = 'none';
             document.getElementById('transcriptionResult').value = '';
             document.getElementById('feedbackResult').value = '';
             document.getElementById('customInstruction').value = '';
+            
+            // Reset recording UI
+            document.getElementById('recordingTimer').textContent = '00:00';
+            document.getElementById('recordingStatus').textContent = 'Klaar om op te nemen';
+            document.getElementById('startRecordBtn').disabled = false;
+            document.getElementById('startRecordBtn').classList.remove('recording');
+            document.getElementById('stopRecordBtn').disabled = true;
             
             // Hide sections
             document.getElementById('transcriptionSection').style.display = 'none';
@@ -679,7 +1012,8 @@ Geef je gedetailleerde analyse en feedback volgens de bovenstaande instructies.`
             // Reset steps
             updateSteps(1);
             
-            // Reset analysis type
+            // Reset selections
+            selectAudioMethod('upload');
             selectAnalysisType('recruitment');
             
             // Re-validate
